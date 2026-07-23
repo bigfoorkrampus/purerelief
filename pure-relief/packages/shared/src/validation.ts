@@ -129,7 +129,8 @@ export const productInputSchema = z
     shortDescription: z.string().trim().min(10).max(300),
     descriptionHtml: z.string().trim().min(20),
     categoryIds: z.array(z.string()).default([]),
-    status: z.enum(['draft', 'published', 'archived']),
+   status: z.enum(['draft', 'published', 'archived']),
+   images: z.array(z.string()).default([]),
     variants: z.array(productVariantInputSchema).min(1, 'Add at least one variant'),
     seo: seoInputSchema,
   })

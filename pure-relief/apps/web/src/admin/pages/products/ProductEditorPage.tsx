@@ -5,16 +5,79 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { productInputSchema } from '@pure-relief/shared';
 import { z } from 'zod';
 import { Plus, Trash2 } from 'lucide-react';
-import { useAdminProduct, useAdminCategories } from '@/admin/hooks/use-admin-data';
+import { useAdminProduct, useAdminCategories, useAdminMedia } from '@/admin/hooks/use-admin-data';
 import { api, readCsrfCookie, ApiClientError } from '@/lib/api-client';
 import { useQueryClient } from '@tanstack/react-query';
-import { slugify } from '@/lib/format';
+import { slugify, mediaUrl } from '@/lib/format';
 import type { Product } from '@pure-relief/shared';
+import { X, ImagePlus } from 'lucide-react';
 
 type FormValues = z.infer<typeof productInputSchema>;
 
 const emptyVariant = { option: 'single' as const, sku: '', label: '', priceMinor: 0, compareAtPriceMinor: null, stockQuantity: 0, isDefault: true };
 
+function ImagePickerModal({
+  selectedIds,
+  onClose,
+  onToggle,
+}: {
+  selectedIds: string[];
+  onClose: () => void;
+  onToggle: (mediaId: string) => void;
+}) {
+  const { data, isLoading } = useAdminMedia({ page: 1, pageSize: 100 });
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-6" onClick={onClose}>
+      <div
+        className="max-h-[80vh] w-full max-w-3xl overflow-y-auto rounded-2xl bg-white p-6 shadow-lifted"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="mb-4 flex items-center justify-between">
+          <h3 className="font-semibold text-ink">Select Images</h3>
+          <button onClick={onClose} className="text-ink-soft hover:text-ink">
+            <X className="h-5 w-5" />
+          </button>
+        </div>
+
+        {isLoading ? (
+          <div className="grid grid-cols-4 gap-3 sm:grid-cols-6">
+            {[...Array(12)].map((_, i) => <div key={i} className="aspect-square animate-pulse rounded-xl bg-slate-100" />)}
+          </div>
+        ) : !data?.items.length ? (
+          <p className="text-sm text-ink-soft">No media uploaded yet. Go to the Media Library to upload images first.</p>
+        ) : (
+          <div className="grid grid-cols-4 gap-3 sm:grid-cols-6">
+            {data.items.filter((a) => !a.isPlaceholder).map((asset) => {
+              const isSelected = selectedIds.includes(asset.id);
+              return (
+                <button
+                  type="button"
+                  key={asset.id}
+                  onClick={() => onToggle(asset.id)}
+                  className={`relative aspect-square overflow-hidden rounded-xl border-2 transition-colors ${
+                    isSelected ? 'border-brand-600' : 'border-transparent hover:border-slate-200'
+                  }`}
+                >
+                  <img src={mediaUrl(asset.r2Key)} alt={asset.altText} className="h-full w-full object-cover" />
+                  {isSelected && (
+                    <div className="absolute inset-0 flex items-center justify-center bg-brand-600/30">
+                      <div className="flex h-6 w-6 items-center justify-center rounded-full bg-brand-600 text-xs font-bold text-white">✓</div>
+                    </div>
+                  )}
+                </button>
+              );
+            })}
+          </div>
+        )}
+
+        <div className="mt-6 flex justify-end">
+          <button type="button" onClick={onClose} className="btn-primary px-4 py-2 text-sm">Done</button>
+        </div>
+      </div>
+    </div>
+  );
+}
 export function ProductEditorPage() {
   const { id } = useParams<{ id: string }>();
   const isNew = id === 'new';
@@ -38,17 +101,34 @@ export function ProductEditorPage() {
   } = useForm<FormValues>({
     resolver: zodResolver(productInputSchema),
     defaultValues: {
-      status: 'draft',
-      categoryIds: [],
-      variants: [emptyVariant],
-      seo: { title: '', metaDescription: '', canonicalPath: '' },
-    },
+     status: 'draft',
+     categoryIds: [],
+     images: [],
+     variants: [emptyVariant],
+     seo: { title: '', metaDescription: '', canonicalPath: '' },
+   },
   });
 
   const { fields: variantFields, append: appendVariant, remove: removeVariant } = useFieldArray({ control, name: 'variants' });
 
   const name = watch('name');
-  const slug = watch('slug');
+ const slug = watch('slug');
+ const imageIds = watch('images') ?? [];
+ const [pickerOpen, setPickerOpen] = useState(false);
+ const { data: mediaData } = useAdminMedia({ page: 1, pageSize: 100 });
+
+ function toggleImage(mediaId: string) {
+   const current = imageIds;
+   setValue(
+     'images',
+     current.includes(mediaId) ? current.filter((id) => id !== mediaId) : [...current, mediaId],
+     { shouldDirty: true },
+   );
+ }
+
+ function removeImage(mediaId: string) {
+   setValue('images', imageIds.filter((id) => id !== mediaId), { shouldDirty: true });
+ }
 
   useEffect(() => {
     if (existingProduct) {
@@ -155,9 +235,49 @@ export function ProductEditorPage() {
           </div>
         </section>
 
-        <section className="card-surface p-6">
-          <div className="flex items-center justify-between">
-            <h2 className="font-semibold text-ink">Variants</h2>
+        </section>
+
+       <section className="card-surface p-6">
+         <div className="flex items-center justify-between">
+           <h2 className="font-semibold text-ink">Images</h2>
+           <button type="button" onClick={() => setPickerOpen(true)} className="btn-ghost text-sm">
+             <ImagePlus className="h-4 w-4" /> Select Images
+           </button>
+         </div>
+         <div className="mt-4">
+           {imageIds.length === 0 ? (
+             <p className="text-sm text-ink-soft">No images selected. Choose from your Media Library above.</p>
+           ) : (
+             <div className="grid grid-cols-3 gap-3 sm:grid-cols-6">
+               {imageIds.map((mediaId) => {
+                 const asset = mediaData?.items.find((a) => a.id === mediaId);
+                 if (!asset) return null;
+                 return (
+                   <div key={mediaId} className="group relative aspect-square overflow-hidden rounded-xl bg-surface-tint">
+                     <img src={mediaUrl(asset.r2Key)} alt={asset.altText} className="h-full w-full object-cover" />
+                     <button
+                       type="button"
+                       onClick={() => removeImage(mediaId)}
+                       className="absolute right-1.5 top-1.5 flex h-6 w-6 items-center justify-center rounded-full bg-white/90 text-red-500 opacity-0 shadow-soft transition-opacity group-hover:opacity-100"
+                       aria-label="Remove image"
+                     >
+                       <X className="h-3.5 w-3.5" />
+                     </button>
+                   </div>
+                 );
+               })}
+             </div>
+           )}
+         </div>
+       </section>
+
+       {pickerOpen && (
+         <ImagePickerModal selectedIds={imageIds} onClose={() => setPickerOpen(false)} onToggle={toggleImage} />
+       )}
+
+       <section className="card-surface p-6">
+         <div className="flex items-center justify-between">
+           <h2 className="font-semibold text-ink">Variants</h2>
             <button type="button" onClick={() => appendVariant(emptyVariant)} className="btn-ghost text-sm">
               <Plus className="h-4 w-4" /> Add Variant
             </button>
@@ -228,13 +348,14 @@ export function ProductEditorPage() {
 }
 
 function productToFormValues(product: Product): FormValues {
-  return {
-    slug: product.slug,
-    name: product.name,
-    shortDescription: product.shortDescription,
-    descriptionHtml: product.descriptionHtml,
-    categoryIds: product.categoryIds,
-    status: product.status,
+ return {
+   slug: product.slug,
+   name: product.name,
+   shortDescription: product.shortDescription,
+   descriptionHtml: product.descriptionHtml,
+   categoryIds: product.categoryIds,
+   status: product.status,
+   images: product.images.map((img) => img.id),
     variants: product.variants.map((v) => ({
       id: v.id,
       option: v.option,

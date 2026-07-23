@@ -181,13 +181,14 @@ adminProductsRouter.post('/import/csv', async (c) => {
     }
 
     await createProduct(c.env.DB, {
-      slug: parsed.data.slug,
-      name: parsed.data.name,
-      shortDescription: parsed.data.shortDescription,
-      descriptionHtml: `<p>${parsed.data.shortDescription}</p>`,
-      categoryIds: [],
-      status: parsed.data.status,
-      variants: [
+     slug: parsed.data.slug,
+     name: parsed.data.name,
+     shortDescription: parsed.data.shortDescription,
+     descriptionHtml: `<p>${parsed.data.shortDescription}</p>`,
+     categoryIds: [],
+     status: parsed.data.status,
+     images: [],
+     variants: [
         {
           option: 'single',
           sku: `${parsed.data.slug}-default`.toUpperCase(),

@@ -190,12 +190,13 @@ export async function listProducts(db: D1Database, params: ListProductsParams): 
 }
 
 export type ProductWriteInput = {
-  slug: string;
-  name: string;
-  shortDescription: string;
-  descriptionHtml: string;
-  categoryIds: string[];
-  status: ProductStatus;
+ slug: string;
+ name: string;
+ shortDescription: string;
+ descriptionHtml: string;
+ categoryIds: string[];
+ status: ProductStatus;
+ images: string[];
   variants: {
     id?: string;
     option: ProductVariantOption;
@@ -299,10 +300,11 @@ export async function updateProduct(db: D1Database, id: string, input: ProductWr
       id,
     );
 
-  const deleteCategories = db.prepare(`DELETE FROM product_categories WHERE product_id = ?`).bind(id);
-  const deleteVariants = db.prepare(`DELETE FROM product_variants WHERE product_id = ?`).bind(id);
+ const deleteCategories = db.prepare(`DELETE FROM product_categories WHERE product_id = ?`).bind(id);
+ const deleteVariants = db.prepare(`DELETE FROM product_variants WHERE product_id = ?`).bind(id);
+ const deleteImages = db.prepare(`DELETE FROM product_images WHERE product_id = ?`).bind(id);
 
-  await db.batch([updateStmt, deleteCategories, deleteVariants, ...buildProductAssociationStatements(db, id, input)]);
+ await db.batch([updateStmt, deleteCategories, deleteVariants, deleteImages, ...buildProductAssociationStatements(db, id, input)]);
 
   const product = await getProductById(db, id);
   if (!product) throw new Error('Product not found after update');
@@ -310,13 +312,21 @@ export async function updateProduct(db: D1Database, id: string, input: ProductWr
 }
 
 function buildProductAssociationStatements(db: D1Database, productId: string, input: ProductWriteInput): D1PreparedStatement[] {
-  const statements: D1PreparedStatement[] = [];
+ const statements: D1PreparedStatement[] = [];
 
-  for (const categoryId of input.categoryIds) {
-    statements.push(
-      db.prepare(`INSERT INTO product_categories (product_id, category_id) VALUES (?, ?)`).bind(productId, categoryId),
-    );
-  }
+ for (const categoryId of input.categoryIds) {
+   statements.push(
+     db.prepare(`INSERT INTO product_categories (product_id, category_id) VALUES (?, ?)`).bind(productId, categoryId),
+   );
+ }
+
+ input.images.forEach((mediaAssetId, idx) => {
+   statements.push(
+     db
+       .prepare(`INSERT INTO product_images (id, product_id, media_asset_id, sort_order) VALUES (?, ?, ?, ?)`)
+       .bind(generateId('pimg'), productId, mediaAssetId, idx),
+   );
+ });
 
   input.variants.forEach((variant, idx) => {
     statements.push(
