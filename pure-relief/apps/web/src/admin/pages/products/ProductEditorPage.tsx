@@ -235,7 +235,6 @@ export function ProductEditorPage() {
           </div>
         </section>
 
-        </section>
 
        <section className="card-surface p-6">
          <div className="flex items-center justify-between">
