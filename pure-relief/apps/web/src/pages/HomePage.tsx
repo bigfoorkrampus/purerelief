@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Snowflake, Sun, Moon, RefreshCcw, ArrowRight, Star } from 'lucide-react';
+import heroImage from '@/assets/images/IMG_20260723_063248_copy_1112x941.png';
 import { Seo, organizationJsonLd } from '@/components/Seo';
 import { useProducts, useSiteConfig } from '@/hooks/use-storefront';
 import { ProductCard } from '@/components/ProductCard';
@@ -72,15 +73,13 @@ export function HomePage() {
             transition={{ duration: 0.7, delay: 0.1 }}
             className="relative"
           >
-            <div className="media-placeholder aspect-square w-full rounded-4xl shadow-lifted">
-              <svg width="120" height="120" viewBox="0 0 24 24" fill="none" className="text-brand-300/70" aria-hidden="true">
-                <path d="M4 7c0-1.1.9-2 2-2h2l1.2-1.6c.2-.25.5-.4.8-.4h3.9c.3 0 .6.15.8.4L16 5h2a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V7Z" stroke="currentColor" strokeWidth="1.5" />
-                <circle cx="12" cy="13" r="3.5" stroke="currentColor" strokeWidth="1.5" />
-              </svg>
-              <span className="absolute bottom-6 left-1/2 -translate-x-1/2 rounded-full bg-white/90 px-4 py-1.5 text-xs font-medium text-ink/50 shadow-soft backdrop-blur">
-                Product photography coming soon
-              </span>
-            </div>
+            <div className="aspect-square w-full overflow-hidden rounded-4xl bg-white shadow-lifted">
+  <img
+    src={heroImage}
+    alt="Pure Relief Migraine Cap"
+    className="h-full w-full object-cover object-[30%_center]"
+  />
+</div>
             <div className="absolute -bottom-6 -left-6 hidden rounded-2xl bg-white p-4 shadow-lifted sm:block">
               <div className="flex items-center gap-3">
                 <span className="flex h-10 w-10 items-center justify-center rounded-full bg-cold-50 text-cold-600">

@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Link, NavLink } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Phone, MessageCircle, ShoppingBag, Menu, X } from 'lucide-react';
+import logo from '@/assets/images/logo.png';
 import { useCartItemCount } from '@/store/cart-store';
 import { useSiteConfig } from '@/hooks/use-storefront';
 
@@ -43,12 +44,16 @@ export function SiteHeader() {
 
       <header className="sticky top-0 z-50 border-b border-slate-100 bg-white/80 backdrop-blur-lg">
         <div className="container-page flex h-[72px] items-center justify-between gap-4">
-          <Link to="/" className="flex items-center gap-2.5 shrink-0" aria-label="Pure Relief home">
-            <LogoMark />
-            <span className="font-display text-[19px] font-extrabold tracking-tighter text-ink">
-              Pure<span className="text-brand-600">.</span>Relief
-            </span>
-          </Link>
+          <Link to="/" className="flex items-center gap-3 shrink-0" aria-label="Pure Relief home">
+  <img
+    src={logo}
+    alt="Pure Relief"
+    className="h-16 w-auto"
+  />
+  <span className="font-display text-[19px] font-extrabold tracking-tighter text-ink">
+    Pure<span className="text-brand-600">.</span>Relief
+  </span>
+</Link>
 
           <nav className="hidden items-center gap-1 lg:flex" aria-label="Main navigation">
             {navLinks.map((link) => (
@@ -119,10 +124,16 @@ export function SiteHeader() {
             className="fixed inset-0 z-[60] bg-white lg:hidden"
           >
             <div className="container-page flex h-[72px] items-center justify-between border-b border-slate-100">
-              <Link to="/" onClick={() => setMobileOpen(false)} className="flex items-center gap-2.5">
-                <LogoMark />
-                <span className="font-display text-[19px] font-extrabold tracking-tighter">Pure.Relief</span>
-              </Link>
+              <Link to="/" onClick={() => setMobileOpen(false)} className="flex items-center gap-3">
+  <img
+    src={logo}
+    alt="Pure Relief"
+    className="h-10 w-auto"
+  />
+  <span className="font-display text-[19px] font-extrabold tracking-tighter">
+    Pure.Relief
+  </span>
+</Link>
               <button
                 type="button"
                 onClick={() => setMobileOpen(false)}
@@ -156,12 +167,4 @@ export function SiteHeader() {
   );
 }
 
-function LogoMark() {
-  return (
-    <span className="relative flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-brand-600 to-cold-500 text-white shadow-glow">
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-        <path d="M12 2 8 9h8l-4 13" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" fill="none" />
-      </svg>
-    </span>
-  );
-}
+
